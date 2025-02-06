@@ -40,7 +40,6 @@ const addTransaction = async (req, res) => {
             await balance.save();
         }
 
-        
         balance.totalBalance += (type === 'income' ? amount : -amount);
         await balance.save();
 
@@ -60,7 +59,7 @@ const addTransaction = async (req, res) => {
     }
 };
 
-// delete transaction by ID
+// Delete transaction by ID and recalculate total balance after deletion
 const deleteTransaction = async (req, res) => {
     const { transactionId } = req.params; // Get transaction ID from URL
 
@@ -78,24 +77,38 @@ const deleteTransaction = async (req, res) => {
             await balance.save();
         }
 
-        // **Reverse total balance update**
-        balance.totalBalance -= (transaction.type === 'income' ? transaction.amount : -transaction.amount);
+        // Reverse the total balance update based on transaction type
+        const amountChange = transaction.type === 'income' ? transaction.amount : -transaction.amount;
+        balance.totalBalance -= amountChange; // Reverse the total balance change
         await balance.save();
 
-        // **Reverse each user's balance**
+        // Reverse each user's balance based on the transaction members
         await Promise.all(transaction.members.map(async (member) => {
             const user = await User.findById(member.user);
             if (user) {
-                user.balance = (user.balance || 0) - member.share; // Revert balance changes
+                user.balance = (user.balance || 0) - member.share; // Reverse the individual share balance
                 await user.save();
             }
         }));
 
-        // **Delete the transaction**
+        // Now, recalculate the total balance from all transactions after deletion
+        const allTransactions = await Transaction.find();
+        let newTotalBalance = 0;
+
+        // Recalculate the total balance by summing all transaction amounts
+        for (const trans of allTransactions) {
+            newTotalBalance += (trans.type === 'income' ? trans.amount : -trans.amount);
+        }
+
+        // Update the balance with the new recalculated total
+        balance.totalBalance = newTotalBalance;
+        await balance.save();
+
+        // Delete the transaction
         await Transaction.findByIdAndDelete(transactionId);
 
         // Send success response
-        res.status(200).json({ message: 'Transaction deleted successfully' });
+        res.status(200).json({ message: 'Transaction deleted and total balance updated successfully' });
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
