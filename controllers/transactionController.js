@@ -8,6 +8,7 @@ const addTransaction = async (req, res) => {
     try {
         // Validate inputs
         if (!type || !date || !amount || !selectedMembers || selectedMembers.length === 0) {
+            console.log("❌ Missing Fields:", { type, date, amount, selectedMembers, remark }); // Debugging
             return res.status(400).json({ message: 'All fields are required' });
         }
 
@@ -54,6 +55,8 @@ const addTransaction = async (req, res) => {
 
         // Send success response
         res.status(201).json({ message: 'Transaction added successfully', transaction });
+        console.log("Received Data:", req.body);
+
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
