@@ -17,24 +17,26 @@ const { authenticateUser, authenticateAdmin } = require('../middleware/authMiddl
 
 const router = express.Router();
 
-// Public Routes
+// ✅ Public Routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 
-// Protected Routes (Requires authentication)
+// ✅ Protected Routes (Requires authentication)
 router.get('/currentUser', authenticateUser, (req, res) => {
-    res.status(200).json(req.user); // Return authenticated user details
+    // Ensure sensitive fields are not exposed
+    const { _id, name, role } = req.user;
+    res.status(200).json({ id: _id, name, role });
 });
 
-router.put('/resetPassword/:userId', authenticateUser, authenticateAdmin, resetPassword);
+router.put('/:userId/resetPassword', authenticateUser, authenticateAdmin, resetPassword);
 
-// Admin-only Routes
-router.delete('/delete/:userId', authenticateUser, authenticateAdmin, deleteUser);
-router.post('/addTransaction', authenticateUser, authenticateAdmin, addTransaction);
-router.delete('/deleteTransaction/:transactionId', authenticateUser, authenticateAdmin, deleteTransaction);
-router.get('/getRecentTransactions', authenticateUser, authenticateAdmin, getRecentTransactions);
-router.get('/dashboard/:userId', authenticateUser, authenticateAdmin, getUserDashboard);
-router.get('/total-balance', authenticateUser, authenticateAdmin, getTotalBalance);
-router.get('/allUsers', authenticateUser, authenticateAdmin, getAllUsers);
+// ✅ Admin-only Routes
+router.delete('/:userId', authenticateUser, authenticateAdmin, deleteUser);
+router.post('/transactions', authenticateUser, authenticateAdmin, addTransaction);
+router.delete('/transactions/:transactionId', authenticateUser, authenticateAdmin, deleteTransaction);
+router.get('/transactions/recent', authenticateUser, authenticateAdmin, getRecentTransactions);
+router.get('/:userId/dashboard', authenticateUser, getUserDashboard);
+router.get('/all', authenticateUser, authenticateAdmin, getAllUsers);
+router.get('/total-balance', authenticateUser, getTotalBalance);
 
 module.exports = router;
