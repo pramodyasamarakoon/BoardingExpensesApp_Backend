@@ -1,20 +1,20 @@
-const Balance = require('../models/TotalBalance');
+const User = require('../models/User');
 
 // Get the total balance of the boarding place
 const getTotalBalance = async (req, res) => {
   try {
-    const balance = await Balance.findOne();
-    if (!balance) {
-      return res.status(404).json({ message: 'Total balance not found' });
-    }
+      const users = await User.find();
+      let totalBalance = users.reduce((acc, user) => acc + (user.balance || 0), 0);
+      
+      // Ensure totalBalance is always a double with 2 decimal places
+      totalBalance = parseFloat(totalBalance.toFixed(2));
 
-    res.status(200).json({
-      totalBalance: balance.totalBalance,
-    });
+      res.status(200).json({ totalBalance }); // Ensure it's a plain number, not an object
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error', error: err.message });
+      res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
+
 
 module.exports = { getTotalBalance };
